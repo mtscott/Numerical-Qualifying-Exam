@@ -1,0 +1,206 @@
+\documentclass[a4paper,12pt]{article} % This defines the style of your paper
+
+
+
+\usepackage[top = 2.5cm, bottom = 2.5cm, left = 2.5cm, right = 2.5cm]{geometry} 
+
+
+
+% The following two packages - multirow and booktabs - are needed to create nice looking tables.
+
+\usepackage{multirow} % Multirow is for tables with multiple rows within one cell.
+
+\usepackage{booktabs} % For even nicer tables.
+
+\usepackage{setspace}
+
+\usepackage{url}
+
+\setlength{\parindent}{0in}
+
+\usepackage{float}
+
+\usepackage{amsmath,amsthm,amssymb,amsfonts, enumitem, fancyhdr, color, comment, graphicx, environ, textcomp, mathrsfs, physics}
+
+\newcommand{\bbR}{\mathbb{R}}
+\newcommand{\bbC}{\mathbb{C}}
+\newcommand{\bbN}{\mathbb{N}}
+\newcommand{\bbZ}{\mathbb{Z}}
+\newcommand{\bbQ}{\mathbb{Q}}
+
+
+
+
+
+\pagestyle{fancy}
+
+
+
+\fancyhf{} % This makes sure we do not have other information in our header or footer.
+
+
+
+\lhead{\footnotesize Qualifying Exam: Numerical Analysis } % Class: Assignment e.g. Abstract Algebra: Gradescope Practice
+
+
+
+%\rhead works just like \lhead (you can also use \chead)
+
+\rhead{\footnotesize Scott (mscott04)} 
+
+\cfoot{\footnotesize \thepage} 
+
+
+
+
+
+\begin{document}
+
+\thispagestyle{empty} % This command disables the header on the first page. 
+
+
+
+\begin{tabular}{p{15.5cm}} % This is a simple tabular environment to align your text nicely 
+
+{\large \bf \sc{Mathematics Qualifying Exam:} Study Guide  } \\ %Course Number: Course Name
+
+Tufts University \\ Fall 2021 - Spring 2023\\ Mitchell Scott (mscott04)  \\ %Professor's name
+
+\hline
+
+\\
+
+\end{tabular} % Our tabular environment ends here.
+
+\section{Numerical Analysis/ Linear Algebra}
+\subsection{Systems of Equations}
+\subsubsection{Linear Systems of Equations}
+\paragraph{Gaussian elimination}
+\paragraph{LU decompositions for full and sparse matrices}
+\paragraph{Cholesky for full and sparse matrices}
+\paragraph{Operation Counts}
+\paragraph{Stability of Linear Systems (Condition Number)}
+\paragraph{Stability of Gaussian elimination}
+\paragraph{Basic Iterative Methods}
+The basic goal of iterative methods is to solve $A\vec{x} = \vec{b}$, but by splitting of $A$:
+\begin{align}
+	A &= M - N\\
+	A\vec{x} &= M\vec{x} - N\vec{x}\\
+	M\vec{x} &= \vec{b} + N\vec{x}
+\end{align}
+But this leads to the questions, what is $M$? Well matrix $M$ is typically chosen so that the linear system $M\vec{z} = \vec{f}$ is ``easily solvable'' for any $\vec{f}$ either because it becomes a special type of matrix like $M$ might be diagonal, triangular, or triangular. It is also important to note that $M$ must not be singular, because then it isn't invertable, which is crucial in solving this problem. 
+
+This means that we start with an initial guess and slowly refine it to get closer and closer to the actual answer. We set up the iterative system
+\begin{align}
+	Mx_{(k+1)} &= b + Nx_{(k)}
+\end{align}
+This means we can take the general formula $x_{k+1} = Gx_k + c$, where $G = M^{-1}N$ and $c = M^{-1}b$.
+This has the Jacobian matrix that is 
+\begin{align}
+	G(x) = M^{-1}N
+\end{align}
+and to see if the iteration scheme is convergent if the spectral radius (recall that is the largest in magnitiude eigenvalue)
+\begin{align}
+	\rho(G) &= \rho(M^{-1}N)\\
+	&< 1
+\end{align}
+The smaller $\rho(G)$ is, the faster we see convergence. 
+
+You see though, we have a choice on what $\textbf{M}$ and $\textbf{N}$ are so that we get $\rho(\textbf{M}^{-1}\textbf{N})$ to be as small as possible. As with all things we care about, there is a trade off between the cost of solving the linear system with $\textbf{M}$ and how many iterations we care to take. The example is if $\textbf{M} = \textbf{A}$, then when we solve it, it can be done in one iteration, but that is a direct solve which can be very computational expensive.
+\subparagraph{Jacobi}
+Like I said before, we normally pick $M$ such that it has a special property to make it, nicely invertable and with a small norm. One way to do this is with the \underline{Jacobi Method}. This is where we have $A$
+\begin{align}
+	A &= D + L + U\\
+	M &= D, \quad N = -(L + U)
+\end{align}
+This means that we get the iterative system
+\begin{align}
+	x^{(k+1)} &= \textbf{D}^{-1}\big( \vec{b} - (\textbf{L}+\textbf{U})x^{(k)}\big)
+\end{align}
+Now if we look at the overall solution components as opposed to the vectorized code, we get
+\begin{align}
+	x_i^{(k+1)} &= \frac{b_i - \sum_{j\neq i} a_{ij}x_j^{(k)}}{a_{ii}}, \quad i = 1,2,...,n
+\end{align}
+	\begin{itemize}
+		\item \textbf{CON:} It is easy to see that we need to double store $x$ here, because we are using all of the old values to record the new values. Or, there is no update to $x$ so we need to let it go all the way through and then we can update it for the next iteration.
+		\item \textbf{CON:} Its convergence rate is rather slow 
+		\item \textbf{CON:} It is not guaranteed to converge, but
+		\item \textbf{PRO:} It normally converges given standard practice. (e.g. if the matrix is diagonally dominant by rows)
+	\end{itemize}
+\subparagraph{Gauss - Seidel}
+We can forgive a lot, but a slow convergence is not something that we want to forgive. It is so slow because it doesn't take advantage of the benefit of the new information available. However, \underline{Gauss-Seidel} does this by using the new component of the solution as soon as it is completed.
+In terms of matrix calculations, we see that 
+\begin{align}
+	\textbf{M} &= \textbf{D} + \textbf{L}\\
+	\textbf{N} &= -\textbf{U}\\
+	x^{(k+1)} &= \textbf{D}^{-1}\big( \vec{b} - \textbf{L}x^{(k+1)} - \textbf{U}x^{(k)}\big)\\
+	&= (\textbf{D} + \textbf{L})^{-1} \big( \vec{b} - \textbf{U}x^{(k)}\big)
+\end{align}
+Or if we care about the specific elemental components, we could get
+\begin{align}
+	x_i^{(k+1)} &= \frac{b_i - \sum_{j<i} a_{ij}x_j^{(k+1)} - \sum_{j>i} a_{ij}x_j^{(k)}}{a_{ii}}, \quad i = 1,..., n
+\end{align}
+\begin{itemize}
+	\item \textbf{PRO:} Faster Convergence than Jacobi
+	\item \textbf{PRO:} Don't have to keep two versions of $\vec{x}$, as we are constantly overwriting it.
+	\item \textbf{CON:} Has to do these recursively, and we can't use this on a parallel computing system.
+	\item \textbf{CON:} Doesn't always converge, but
+	\item \textbf{PRO:} Converges under most practical applications, and less required than Jacobi (e.g. SPD matrix).
+	\item \textbf{CON:} Still kind of slow to converge. 
+\end{itemize}
+\subparagraph{Successive Overrelaxation method}
+\paragraph{Conjugate Gradient Method}
+
+\subsubsection{Eigenvalue Problems}
+\paragraph{Gerschgorin theorem}
+\paragraph{power method} 
+\paragraph{inverse power method} 
+\paragraph{stability of eigenvalue problems}
+
+\subsubsection{Nonlinear System of Equations, Optimization}
+\paragraph{Newton's Method}
+\paragraph{Quasi-Newton Methods}
+\paragraph{Fixed Point Iteration}
+\paragraph{Newton and Levenberg-Marquardt Methods for Unconstrained Optimization}
+
+\subsection{Numerical Aproximation}
+\subsubsection{Interpolation}
+\paragraph{Interpolating polynomials}
+\subparagraph{Lagrange Interpolating Polynomials}
+\subparagraph{Hermite Interpolating Polynomials}
+\paragraph{Runge phenomena}
+\paragraph{Splines}
+\paragraph{least squares approximation of functions and orthogonal polynomials}
+
+\subsubsection{Integration}
+\paragraph{Newton-Cotes methods}
+\paragraph{Gaussian quadrature}
+\paragraph{Euler-MacLaurin formula}
+\paragraph{Adaptive quadrature}
+
+\subsubsection{Differential Equations}
+\paragraph{Convergence of explicit one-step methods}
+\paragraph{Stiffness}
+\paragraph{A- stability}
+\paragraph{Impossibility of A-stable explicit Runge-Kutta methods}
+
+\subsection{References}
+\begin{enumerate}
+	\item An Introduction to Numerical Analysis by K. E. Atkinson (Wiley)
+	\item Unconstrained Optimization by P. E. Frandsen, K. Jonasson, H. B. Nielsen, and O. Tingleff
+	\item Analysis of Numerical Methods by E. Isaacson and H. B. Keller (Wiley, Dover reprint)
+	\item Finite Difference Methods for Ordinary and Partial Differential Equations by R. LeVeque (SIAM)
+	\item A First Course in the Numerical Analysis of Differential Equations by A. Iserles (Cambridge University Press)
+\end{enumerate}
+
+\section{Analysis}
+
+\section{Algebra}
+
+\section{Partial Differential Equations}
+
+\section{Algebraic Topology}
+
+\section{Geometry}
+
+\end{document}
