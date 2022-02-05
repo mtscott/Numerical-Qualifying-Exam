@@ -28,7 +28,7 @@
 \newcommand{\bbZ}{\mathbb{Z}}
 \newcommand{\bbQ}{\mathbb{Q}}
 
-
+\newtheorem{theorem}{Theorem}
 
 
 
@@ -64,7 +64,7 @@
 
 {\large \bf \sc{Mathematics Qualifying Exam:} Study Guide  } \\ %Course Number: Course Name
 
-Tufts University \\ Fall 2021 - Spring 2023\\ Mitchell Scott (mscott04)  \\ %Professor's name
+Tufts University \\ Fall 2021 - Spring 2022\\ Mitchell Scott (mscott04)  \\ %Professor's name
 
 \hline
 
@@ -78,6 +78,7 @@ Tufts University \\ Fall 2021 - Spring 2023\\ Mitchell Scott (mscott04)  \\ %Pro
 \paragraph{Gaussian elimination}
 \paragraph{LU decompositions for full and sparse matrices}
 \paragraph{Cholesky for full and sparse matrices}
+If $\textbf{A}$ is SPD, then \textbf{LU} could become $\textbf{U} = \textbf{L}^T$.
 \paragraph{Operation Counts}
 \paragraph{Stability of Linear Systems (Condition Number)}
 \paragraph{Stability of Gaussian elimination}
@@ -149,13 +150,98 @@ Or if we care about the specific elemental components, we could get
 	\item \textbf{CON:} Still kind of slow to converge. 
 \end{itemize}
 \subparagraph{Successive Overrelaxation method}
+While Gauss-Seidel is still better than Jacobi, it is still not fast. But there is a way to make it better, and that is called \\
+\underline{Successive Over-Relaxation (SOR)}. We first start each new iteration by computing where the Gauss- Seidel step would take us, $x_{GS}^{(k+1)}$, but we don't just step in that direction. Instead,
+\begin{align}
+	\vec{x}^{(k+1)} &= \vec{x}^{(k)} + \omega \big(\vec{x}_{GS}^{(k+1)} - \vec{x}^{(k)}\big)\\
+	&= (1-\omega) \vec{x}^{(k)}  + \omega \vec{x}_{GS}^{(k+1)}\label{SOR}
+\end{align}
+Okay, but what does this $\omega$ do? What is the optimal value of $\omega$? Your guess is as good as mine. bestie. The whole point of $\omega$ is to speed up the convergence of the GS method, so it's goal is to reduce $\rho(\textbf{M}^{-1}\textbf{N})$. I still don't know a robust way to do this.
+
+It is also important to note that we only care about $\omega\in(0,2)$ because outside of that range, we know that it will diverge. Look at equation $\ref{SOR}$, and I feel that this is self explanatory. We also know that when $\omega<1$ gives us \textit{under}-relaxation, and $\omega>1$ gives us \textit{over}-relaxation. When $\omega=1$, we just get Gauss- Seidel. Does it matter if we are doing under or over relaxation?
+
+\begin{align}
+	\vec{x}^{(k+1)} &= \vec{x}^{(k)} + \omega\bigg(\textbf{D}^{-1}\big(\vec{b} - \textbf{L}\vec{x}^{(k+1)} - \textbf{U}\vec{x}^{(k)}\big) - \vec{x}^{(k)} \bigg)\\
+	&= \big( \textbf{D}+ \omega \textbf{L}\big)^{-1} \bigg(\big(1-\omega\big)\textbf{D} - \omega\textbf{U}\bigg)\vec{x}^{(k)} + \omega \big( \textbf{D}+ \omega \textbf{L}\big)^{-1} \vec{b}
+\end{align}
+This implies that the splitting of the matrix $\textbf{A}$ is
+\begin{align}
+	\textbf{M}&= \frac{1}{\omega} \textbf{D} + \textbf{L}, \qquad \textbf{N} = \bigg( \frac{1}{\omega} - 1\bigg) \textbf{D} - \textbf{U}
+\end{align}
+\begin{itemize}
+	\item \textbf{PRO:} Faster than Gauss- Seidel
+	\item \textbf{CON:} No way to know when it will converge, also have to now consider what $\omega$ values will work with convergence.
+	\item \textbf{CON:} Still a stationary method so not as fast as it could be.
+\end{itemize}
+	
 \paragraph{Conjugate Gradient Method}
 
 \subsubsection{Eigenvalue Problems}
+Sometimes we care about eigenvalues, but it would be too computationally expensive (especially for a large sparse matrix) to compute them accurately. The current algorithms for eigenvalue finding are $\order{n^3}$. So let's say we just want to know if our iterative method is going to converge, we want to check that the $\rho(\textbf{A})<1$, but if we need to find them exactly, it would take the same amount of time to just solve it directly. 
+
+This is why getting rough estimates of the magnitude of eigenvalues would be helpful. There is the roughest, dirtiest way to do that which is 
+\begin{align}
+	|\lambda| &\leq \norm{\textbf{A}}
+\end{align}
+where the norm can be any induced matrix norm. 
 \paragraph{Gerschgorin theorem}
-\paragraph{power method} 
-\paragraph{inverse power method} 
-\paragraph{stability of eigenvalue problems}
+But maybe we don't want the roughest, dirtiest approximation. Meet \underline{Gershgorin's Theorem}, sometimes called \textit{Gershgorin's circle theorem}. 
+
+\begin{theorem}
+	Let $\textbf{A}$ be an $n\times n$ matrix. The eigenvalues $\lambda_1, \lambda_2,\cdots, \lambda_n$ are all contained in a union of $n$ disks, where the $i^{th}$ disk is centered at $a_{ii}$ with radius $\sum_{j\neq i} |a_{ij}|$.
+\end{theorem}
+\begin{proof}
+	Let $\lambda$ be any eigenvalue, with the corresponding normalized eigenvector $\vec{x}$, (this means that $\norm{x}_{\infty} = 1$. Now take $\vec{x}_i$ which is an entry of $\vec{x}$ such that $|x_i| = 1$, and we are guraneteed to have one because of the infinity norm condition that we set in place. 
+	
+	Recall $\textbf{A}\vec{x} = \lambda \vec{x}$, now we have
+	\begin{align}
+		(\lambda - a_{ii})x_i &= \sum_{j\neq i}a_{ij}x_j
+	\end{align}
+Now using the Triangle inequality, we get 
+	\begin{align}
+		|\lambda - a_{ii}| &\leq \sum_{j\neq i} |a_{ij}| \cdot |x_j|\\
+		&\leq \sum_{j\neq i} |a_{ij}|
+	\end{align}
+We know that $|x_j|\leq 1$, because we have the infinity norm of 1, so everything has to be less than or equal to the infinity norm.
+\end{proof}
+
+\paragraph{Power Method} 
+Sometimes we don't care about all of the eigenvalues, but maybe just one (think spectral radius). There is a way to find this eigenvector/eigenvalue called Power Iteration, which multpilies an arbitrary nonzero vector by a matrix over and over again $(\textbf{A}, \textbf{A}^2, \textbf{A}^3, \cdots)$
+
+The algorithm for this is inout $\vec{x}_0$, an arbitrary nonzero vector. Then iterate $k$ times so that $\vec{x}_{k+1} = \textbf{A}\vec{x}_k$. However, this is assuming that $\exists! \lambda_1$ of maximum modulus with corresponding $\vec{v}_1$. If that is the case, then this method will result in a vector $\vec{x}$ that is a multiple of $\vec{v}_1$.
+
+%% Proof of why this works and intution
+
+This method is cool 
+\begin{itemize}
+	\item \textbf{PRO:} Almost always works in practice, but not guarenteed.
+	\item \textbf{CON:} Fails when $\vec{x}_0$ has no component in dominant eigenvector $\vec{v}_1$. This can be reduced by picking a random starting vector, or because computational arithmetic is inexact, normally there is some rounding in that vector component which will introduce a component.
+	\item \textbf{CON:}This analysis was done assuming that there is a unique largest eigenvalue, but what about $\lambda = \pm \i$? They are a complex conjugate pair.
+	\item \textbf{PRO:} If we start with a real matrix and a real starting vector, we will always get a real convergent sequence.
+	\item \textbf{CON:} This method can lead to overflow/underflow because we are just multiplying something over and over again, so maybe we can get rid of this risk?
+\end{itemize}
+
+In fact, we deserve better, so that is where the normalized Power iteration comes in.
+
+Just like before, we start with $\vec{x}_0$, an arbitrary nonzero vector. We introduce a loop where $\vec{y}_k = \textbf{A}\vec{x}_{k-1}$ and then we normalized $\vec{x}_k = \vec{y}_k / \norm{\vec{y}_k}_{\infty}$. This way every iteration is normalized!
+
+%% Add more here!
+
+\paragraph{Inverse Power Method} 
+Sometimes we don't care about the largest eigenvalue, but rather the smallest. (We love our small kings!) This can be used in graph theory, like if the graph is bipartite or not. Or maybe you want to bound the conjugacy of $\vec{x}^T\textbf{A}\vec{x}$, which is bounded below by $\lambda_{min}$.
+
+We will use the fact that the eigenvalues of $\textbf{A}^{-1}$ are the reciprocals of $\textbf{A}$. This means that the smallest eigenvalues of $\textbf{A}$ are the largest eigenvalues of $\textbf{A}^{-1}$, and we already know a way to find the largest eigenvalues of a matrix. 
+
+This method is called the \underline{Inverse Power Method}. The algorithm is start with an arbitrary nonzero vector. Then you want to loop over an iteration index solving $\textbf{A}\vec{y}_k = \vec{x}_{k-1}$ for $\vec{y}_k$. Then you can normalize it so that $\vec{x}_k = \vec{y}_k / \norm{\vec{y}_k}_{\infty}$. 
+
+It is also important to know that using a shift value offers far more potential for accelerating convergence, and can be used to get more eigenvalues than just the min and max one. This is super helpful in the inverse power iteration (why?). In particular, the eigenvalue of $\textbf{A} - \sigma\\textbf{I}$ of smallest magnitude is simply $\lambda - \sigma$, where $\lambda$ is an eigenvalue of $\textbf{A}$ closest to $\sigma$.
+\begin{enumerate}
+	\item \textbf{PRO:} If the shift is close to an actual eigenvalue, convergence is super fast.
+	\item \textbf{PRO:} Can find ANY eigenvalue you want, not just the max and min.
+	\item \textbf{PRO:} Super useful in computing the eigenvector corresponding to an approximate eigenvalue that has already been obtained by some other mean. 
+	\item \textbf{CON:} Still linear convergence (I mean smaller $C$ but still)
+\end{enumerate}
+\paragraph{Stability of Eigenvalue Problems}
 
 \subsubsection{Nonlinear System of Equations, Optimization}
 \paragraph{Newton's Method}
@@ -193,14 +279,14 @@ Or if we care about the specific elemental components, we could get
 	\item A First Course in the Numerical Analysis of Differential Equations by A. Iserles (Cambridge University Press)
 \end{enumerate}
 
-\section{Analysis}
+%\section{Analysis}
 
-\section{Algebra}
+%\section{Algebra}
 
-\section{Partial Differential Equations}
+%\section{Partial Differential Equations}
 
-\section{Algebraic Topology}
+%\section{Algebraic Topology}
 
-\section{Geometry}
+%\section{Geometry}
 
 \end{document}
