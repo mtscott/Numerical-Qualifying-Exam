@@ -22,5 +22,5 @@ function [eval, evec] = powerIteration(A, rank, niter)
     end
 
     evec = Av;
-    eval = Av' * (A* Av) / (Av' * Av);
+    eval = (Av' * (A* Av)) / normAv;
 end
