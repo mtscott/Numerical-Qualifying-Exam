@@ -4,7 +4,7 @@ function [x, res] = forward_sor(A, b, x, w, niter)
 %
 %           x_{k+1} = x_k + (D + wL)^{-1}(wb - [wU + (w - 1)D] * x_k)
 %
-%   Inputs: A - matrix in lnear equation
+%   Inputs: A - matrix in linear equation
 %           b - known vector in linear equation
 %           x - initial guess to linear equation
 %           w - relaxation parameter
