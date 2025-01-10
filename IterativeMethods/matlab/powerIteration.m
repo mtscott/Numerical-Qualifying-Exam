@@ -12,7 +12,7 @@ function [eval, evec] = powerIteration(A, rank, niter)
 %            evec - solution to dominant eigenvector (computed using 
 
     n = size(A,1);
-    v = rand(n,1);
+    v = rand(n,rank);
     Av = A * v;
     Av = Av/norm(Av);
     for i = 1 : 50-1
